@@ -5,6 +5,7 @@ This repository is the umbrella repo for the Spider projects and tracks each cod
 - `Spiderweb`
 - `SpiderApp`
 - `SpiderNode`
+- `SpiderMonkey`
 
 ## Clone
 
