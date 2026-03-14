@@ -7,3 +7,6 @@
 [submodule "Spiderweb"]
 	path = Spiderweb
 	url = https://github.com/DeanoC/Spiderweb.git
+[submodule "SpiderMonkey"]
+	path = SpiderMonkey
+	url = https://github.com/DeanoC/SpiderMonkey.git
