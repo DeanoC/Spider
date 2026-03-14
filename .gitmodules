@@ -1,0 +1,9 @@
+[submodule "SpiderNode"]
+	path = SpiderNode
+	url = https://github.com/DeanoC/SpiderNode.git
+[submodule "SpiderApp"]
+	path = SpiderApp
+	url = https://github.com/DeanoC/SpiderApp.git
+[submodule "Spiderweb"]
+	path = Spiderweb
+	url = https://github.com/DeanoC/Spiderweb.git
