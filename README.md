@@ -1,9 +1,11 @@
 # Spider Monorepo
 
-The Spider ecosystem is a based around the Spiderweb agent 'hosted' OS, any AI agent with filesystem tools can access a shared distributed filesystem across many systems and access to services (called venoms) using a filesystem RPC approach.
-SpiderApp is a front end gui, to interact and observe the Spiderweb
-SpiderNode is small nodes that provide new filesystems and venoms to the Spiderweb
-SpiderMonkey is a custom AI agent that is designed specifically for Spiderweb with advanced context and memory systems designed in the filesystem RPC style Spider supports.
+The Spider ecosystem is a based around the Spiderweb agent 'hosted' OS,
+
+- Spiderweb allows any AI agent to  access a shared distributed filesystem using a filesystem RPC style approach that the agent self learn
+- SpiderApp is a front end gui, to interact and observe the Spiderweb
+- SpiderNode is small nodes that provide new filesystems and venoms to the Spiderweb
+- SpiderMonkey is a custom AI agent that is designed specifically for Spiderweb with advanced context and memory systems designed in the filesystem RPC style Spider supports.
 
 This repository is the umbrella repo for the Spider projects and tracks each codebase as a git submodule:
 
