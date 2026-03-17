@@ -1,5 +1,5 @@
 # Spider Monorepo
-![Spiderweb](assets/Spiderweb.png)
+![Spiderweb](Spiderweb.png)
 
 The Spider ecosystem is a based around the Spiderweb agent 'hosted' OS,
 
