@@ -1,5 +1,5 @@
 # Spider Monorepo
-![Spiderweb](Spiderweb.png)
+
 
 The Spider ecosystem is a based around the Spiderweb agent 'hosted' OS,
 
@@ -8,8 +8,9 @@ The Spider ecosystem is a based around the Spiderweb agent 'hosted' OS,
 - SpiderNode is small nodes that provide new filesystems and venoms to the Spiderweb
 - SpiderMonkey is a custom AI agent that is designed specifically for Spiderweb with advanced context and memory systems designed in the filesystem RPC style Spider supports.
 
-This repository is the umbrella repo for the Spider projects and tracks each codebase as a git submodule:
+![Spiderweb](Spiderweb.png)
 
+This repository is the umbrella repo for the Spider projects and tracks each codebase as a git submodule:
 - `Spiderweb`
 - `SpiderApp`
 - `SpiderNode`
