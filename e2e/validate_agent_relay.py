@@ -16,6 +16,8 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--remote-root", required=True)
     parser.add_argument("--output", required=True)
+    parser.add_argument("--worker-platform", default="linux")
+    parser.add_argument("--reviewer-platform", default="macos")
     args = parser.parse_args()
 
     remote_root = Path(args.remote_root).resolve()
@@ -53,13 +55,13 @@ def main() -> int:
             {"check": "worker_mentions_hello", "ok": "hello from the remote node fixture" in worker_report_text, "detail": None},
             {"check": "worker_mentions_nested", "ok": "remote smoke fixture nested check" in worker_report_text, "detail": None},
             {"check": "worker_summary_scenario", "ok": worker_summary_payload.get("scenario") == "agent-relay-v1", "detail": worker_summary_payload.get("scenario")},
-            {"check": "worker_summary_platform", "ok": worker_summary_payload.get("worker_platform") == "linux", "detail": worker_summary_payload.get("worker_platform")},
+            {"check": "worker_summary_platform", "ok": worker_summary_payload.get("worker_platform") == args.worker_platform, "detail": worker_summary_payload.get("worker_platform")},
             {"check": "worker_summary_status", "ok": worker_summary_payload.get("status") == "completed", "detail": worker_summary_payload.get("status")},
             {"check": "review_heading", "ok": review_text.startswith("# Review"), "detail": None},
             {"check": "review_mentions_pass", "ok": "PASS" in review_text, "detail": None},
             {"check": "review_mentions_worker_files", "ok": "worker_report.md" in review_text and "worker_summary.json" in review_text, "detail": None},
             {"check": "review_summary_scenario", "ok": review_summary_payload.get("scenario") == "agent-relay-v1", "detail": review_summary_payload.get("scenario")},
-            {"check": "review_summary_platform", "ok": review_summary_payload.get("reviewer_platform") == "macos", "detail": review_summary_payload.get("reviewer_platform")},
+            {"check": "review_summary_platform", "ok": review_summary_payload.get("reviewer_platform") == args.reviewer_platform, "detail": review_summary_payload.get("reviewer_platform")},
             {"check": "review_summary_status", "ok": review_summary_payload.get("status") == "completed", "detail": review_summary_payload.get("status")},
             {"check": "review_summary_verdict", "ok": review_summary_payload.get("verdict") == "PASS", "detail": review_summary_payload.get("verdict")},
         ]
