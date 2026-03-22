@@ -1,0 +1,8 @@
+{
+  "scenario": "remote-smoke-v1",
+  "expected_bind_path": "./remote",
+  "required_files": [
+    "hello.txt",
+    "nested/check.txt"
+  ]
+}
