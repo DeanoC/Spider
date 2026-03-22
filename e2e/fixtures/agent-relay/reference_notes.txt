@@ -1,0 +1,1 @@
+This relay smoke proves that one platform can write through Spiderweb into a remote export and that the other platform can immediately inspect those results locally.

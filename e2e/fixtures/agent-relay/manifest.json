@@ -1,0 +1,8 @@
+{
+  "description": "Cross-platform agent relay fixture exported from the remote node",
+  "required_files": [
+    "hello.txt",
+    "nested/check.txt"
+  ],
+  "scenario": "remote-smoke-v1"
+}

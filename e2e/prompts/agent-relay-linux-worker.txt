@@ -1,0 +1,34 @@
+You are running inside the mounted workspace root of a cross-platform Spiderweb smoke test.
+
+Work only inside `./remote`.
+
+Read these files:
+- `./remote/task_brief.md`
+- `./remote/reference_notes.txt`
+- `./remote/manifest.json`
+- `./remote/hello.txt`
+- `./remote/nested/check.txt`
+
+Create or overwrite these files:
+- `./remote/worker_report.md`
+- `./remote/worker_summary.json`
+
+Requirements for `worker_report.md`:
+- Start with `# Worker Report`
+- Include sections `## Summary`, `## Key Facts`, and `## Proposed Follow-up`
+- Mention the exact phrase `cross-platform relay`
+- Mention the exact text `hello from the remote node fixture`
+- Mention the exact text `remote smoke fixture nested check`
+
+Requirements for `worker_summary.json`:
+- valid JSON
+- object fields:
+  - `scenario`: `"agent-relay-v1"`
+  - `worker_platform`: `"linux"`
+  - `status`: `"completed"`
+  - `reviewed_inputs`: `["manifest.json","task_brief.md","reference_notes.txt","hello.txt","nested/check.txt"]`
+  - `output_files`: `["worker_report.md"]`
+  - `remote_bind_path`: `"/remote"`
+
+Do not edit any other files.
+Finish only after both output files exist.

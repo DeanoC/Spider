@@ -26,7 +26,7 @@ LOCAL_WORKSPACE_NODE_NAME="${LOCAL_WORKSPACE_NODE_NAME:-cross-linux-workspace-no
 REMOTE_NODE_NAME="${REMOTE_NODE_NAME:-cross-macos-remote-node}"
 REMOTE_EXPORT_NAME="${REMOTE_EXPORT_NAME:-remote-smoke}"
 REMOTE_MOUNT_PATH="${REMOTE_MOUNT_PATH:-/imports/remote-smoke}"
-REMOTE_BIND_PATH="${REMOTE_BIND_PATH:-/remote}"
+REMOTE_BIND_PATH="/remote"
 
 SPIDERNODE_PREFIX="$BUILD_DIR/spidernode-prefix"
 SPIDERWEB_PREFIX="$BUILD_DIR/spiderweb-prefix"
