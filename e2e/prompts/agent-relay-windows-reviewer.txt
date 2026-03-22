@@ -1,0 +1,29 @@
+You are running on Windows inside the exported remote folder for a cross-platform Spiderweb smoke test.
+
+Read these files from the current directory:
+- `task_brief.md`
+- `reference_notes.txt`
+- `worker_report.md`
+- `worker_summary.json`
+
+Create or overwrite:
+- `review.md`
+- `review_summary.json`
+
+Requirements for `review.md`:
+- Start with `# Review`
+- Include sections `## Verdict`, `## What Worked`, `## Gaps`, and `## Recommended Next Step`
+- State a verdict of `PASS` if the worker outputs satisfy the task brief
+- Mention both `worker_report.md` and `worker_summary.json`
+
+Requirements for `review_summary.json`:
+- valid JSON
+- object fields:
+  - `scenario`: `"agent-relay-v1"`
+  - `reviewer_platform`: `"windows"`
+  - `status`: `"completed"`
+  - `verdict`: `"PASS"`
+  - `reviewed_files`: `["task_brief.md","worker_report.md","worker_summary.json"]`
+
+Do not edit any other files.
+Finish only after both review output files exist.
