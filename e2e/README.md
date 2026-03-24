@@ -2,6 +2,66 @@
 
 This directory holds lightweight end-to-end checks that span multiple Spider repos.
 
+## macOS Computer and Browser Node Smoke
+
+`test-macos-computer-browser-node.sh` exercises the first macOS-only node-hosted desktop automation lane:
+
+- Spiderweb runs locally on macOS with the bundled local node enabled
+- the local node publishes `computer-main` and `browser-main`
+- those providers appear in `/.spiderweb/catalog/*` but stay absent from `/.spiderweb/venoms/*` until explicitly bound
+- the smoke binds:
+  - `/.spiderweb/venoms/computer`
+  - `/.spiderweb/venoms/browser`
+- it then proves one observe + act loop for:
+  - a deterministic native AppKit fixture window
+  - a deterministic local browser fixture page
+
+### Run
+
+```bash
+bash /Users/deanocalver/Documents/Projects/Spider/e2e/test-macos-computer-browser-node.sh
+```
+
+Optional overrides:
+
+```bash
+COMPUTER_INCLUDE_SCREENSHOT=1 \
+BROWSER_INCLUDE_SCREENSHOT=1 \
+OUTPUT_DIR=/Users/deanocalver/Documents/Projects/Spider/e2e/out/manual-computer-browser \
+bash /Users/deanocalver/Documents/Projects/Spider/e2e/test-macos-computer-browser-node.sh
+```
+
+### Prerequisites
+
+- macOS
+- `zig`, `swiftc`, `python3`, `jq`, `open`, and `osascript`
+- one supported browser app installed:
+  - Google Chrome
+  - Chromium
+  - Brave Browser
+- Accessibility permission for the locally built `spiderweb-computer-driver`
+
+Screen capture is optional by default in this smoke because it is especially permission-sensitive on local machines. Set `COMPUTER_INCLUDE_SCREENSHOT=1`, `BROWSER_INCLUDE_SCREENSHOT=1`, and optionally `REQUIRE_SCREEN_CAPTURE=1` when you want the lane to enforce screenshot artifacts too.
+
+### Output
+
+Each run writes a timestamped artifact directory under:
+
+`/Users/deanocalver/Documents/Projects/Spider/e2e/out/`
+
+Important artifacts:
+
+- `artifacts/providers.before-bind.json`
+- `artifacts/packages.before-bind.json`
+- `artifacts/bindings.after-bind.json`
+- `artifacts/computer.observe.result.json`
+- `artifacts/computer.last_observation.json`
+- `artifacts/computer.fixture_state.json`
+- `artifacts/browser.observe.result.json`
+- `artifacts/browser.last_dom.before-act.json`
+- `artifacts/browser.last_dom.after-act.json`
+- `artifacts/summary.json`
+
 ## Cross-Platform Node Workspace Smoke
 
 `test-cross-platform-node-workspace.sh` exercises a mixed-platform workspace:
