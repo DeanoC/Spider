@@ -18,6 +18,8 @@ TEMP_HOME="$OUTPUT_DIR/home"
 LTM_DIR="$OUTPUT_DIR/ltm"
 SPIDERWEB_RUNTIME_ROOT="$OUTPUT_DIR/spiderweb-root"
 WORKSPACE_EXPORT_ROOT="$OUTPUT_DIR/workspace-export"
+LOCAL_NODE_DRIVER_BIN_DIR="$LTM_DIR/local-node/bin"
+COMPUTER_DRIVER_TRUST_PATH="$LOCAL_NODE_DRIVER_BIN_DIR/spiderweb-computer-driver"
 
 SPIDERWEB_PORT="${SPIDERWEB_PORT:-}"
 BROWSER_FIXTURE_PORT="${BROWSER_FIXTURE_PORT:-}"
@@ -53,7 +55,6 @@ SPIDERWEB_AUTH_TOKEN=""
 WORKSPACE_ID=""
 WORKSPACE_TOKEN=""
 LOCAL_NODE_ID=""
-BROWSER_APP_NAME=""
 BROWSER_URL=""
 
 RED='\033[0;31m'
@@ -65,11 +66,41 @@ log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 log_pass() { echo -e "${GREEN}[PASS]${NC} $1"; }
 log_fail() { echo -e "${RED}[FAIL]${NC} $1" >&2; }
 
+reset_output_dir_preserving_driver_bin() {
+    if [[ -d "$OUTPUT_DIR" ]]; then
+        find "$OUTPUT_DIR" -mindepth 1 -maxdepth 1 \
+            ! -path "$LTM_DIR" \
+            -exec rm -rf {} +
+        if [[ -d "$LTM_DIR" ]]; then
+            find "$LTM_DIR" -mindepth 1 -maxdepth 1 \
+                ! -path "$LTM_DIR/local-node" \
+                -exec rm -rf {} +
+        fi
+        if [[ -d "$LTM_DIR/local-node" ]]; then
+            find "$LTM_DIR/local-node" -mindepth 1 -maxdepth 1 \
+                ! -path "$LOCAL_NODE_DRIVER_BIN_DIR" \
+                -exec rm -rf {} +
+        fi
+        if [[ -d "$LOCAL_NODE_DRIVER_BIN_DIR" ]]; then
+            find "$LOCAL_NODE_DRIVER_BIN_DIR" -mindepth 1 -maxdepth 1 \
+                -type f ! -name "spiderweb-computer-driver" ! -name "spiderweb-browser-driver" \
+                -exec rm -rf {} +
+        fi
+    else
+        mkdir -p "$OUTPUT_DIR"
+    fi
+}
+
 require_bin() {
     if ! command -v "$1" >/dev/null 2>&1; then
         log_fail "missing required command: $1"
         exit 1
     fi
+}
+
+ensure_playwright_browser() {
+    log_info "Ensuring Playwright Chromium is installed for the isolated smoke home ..."
+    HOME="$TEMP_HOME" playwright install chromium >/dev/null
 }
 
 pick_free_port() {
@@ -184,22 +215,6 @@ wait_for_local_node() {
         sleep 0.25
     done
     return 1
-}
-
-resolve_browser_app() {
-    python3 - <<'PY'
-from pathlib import Path
-
-known = [
-    ("Google Chrome", Path("/Applications/Google Chrome.app")),
-    ("Chromium", Path("/Applications/Chromium.app")),
-    ("Brave Browser", Path("/Applications/Brave Browser.app")),
-]
-for name, path in known:
-    if path.exists():
-        print(name)
-        break
-PY
 }
 
 compile_fixture_app() {
@@ -445,7 +460,7 @@ PY
     local accessibility
     accessibility="$(jq -r '(.health.permissions.accessibility // .status.permissions.accessibility // false)' <<<"$observe_json")"
     if [[ "$accessibility" != "true" ]]; then
-        log_fail "computer observe reported accessibility not granted; allow $(cd "$SPIDERWEB_DIR" && pwd)/zig-out/bin/spiderweb-computer-driver in System Settings > Privacy & Security > Accessibility"
+        log_fail "computer observe reported accessibility not granted; allow $COMPUTER_DRIVER_TRUST_PATH in System Settings > Privacy & Security > Accessibility"
         exit 1
     fi
 
@@ -456,8 +471,12 @@ PY
     local observation_json
     observation_json="$(fs_call cat "/.spiderweb/venoms/computer/artifacts/last_observation.json")"
     printf '%s\n' "$observation_json" >"$ARTIFACT_DIR/computer.last_observation.json"
-    if [[ "$observation_json" != *"$FIXTURE_WINDOW_TITLE"* ]]; then
-        log_fail "computer observation did not include the fixture window title"
+    if ! jq -e --arg app "SpiderComputerFixture" --arg title "$FIXTURE_WINDOW_TITLE" '
+        (.focused_window.app_name // "") == $app or
+        (.focused_window.window_title // "") == $title or
+        any((.windows // [])[]?; (.app_name // "") == $app or (.window_title // "") == $title)
+    ' >/dev/null <<<"$observation_json"; then
+        log_fail "computer observation did not include the fixture app or window"
         exit 1
     fi
 
@@ -533,10 +552,6 @@ PY
 }
 
 run_browser_flow() {
-    log_info "Launching browser fixture target ..."
-    open -a "$BROWSER_APP_NAME" "about:blank" >/dev/null 2>&1 || true
-    sleep 2
-
     log_info "Running browser navigate ..."
     invoke_venom "browser" "$(python3 - "$BROWSER_URL" <<'PY'
 import json
@@ -659,6 +674,8 @@ main() {
     require_bin jq
     require_bin zig
     require_bin swiftc
+    require_bin node
+    require_bin playwright
     require_bin open
     require_bin osascript
 
@@ -667,6 +684,7 @@ main() {
         exit 1
     fi
 
+    reset_output_dir_preserving_driver_bin
     mkdir -p "$OUTPUT_DIR" "$LOG_DIR" "$STATE_DIR" "$ARTIFACT_DIR" "$BUILD_DIR" "$TEMP_HOME" "$LTM_DIR" "$SPIDERWEB_RUNTIME_ROOT" "$WORKSPACE_EXPORT_ROOT"
     printf 'workspace fixture root\n' >"$WORKSPACE_EXPORT_ROOT/README.txt"
 
@@ -698,6 +716,7 @@ main() {
         fi
     done
 
+    ensure_playwright_browser
     compile_fixture_app
     start_browser_fixture_server
     start_spiderweb
@@ -707,13 +726,6 @@ main() {
         exit 1
     fi
     log_pass "Local node resolved as $LOCAL_NODE_ID"
-
-    BROWSER_APP_NAME="$(resolve_browser_app || true)"
-    if [[ -z "$BROWSER_APP_NAME" ]]; then
-        log_fail "no supported browser app found; install Google Chrome, Chromium, or Brave Browser"
-        exit 1
-    fi
-    log_pass "Browser app resolved as $BROWSER_APP_NAME"
 
     create_workspace
 

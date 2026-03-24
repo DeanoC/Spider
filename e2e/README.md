@@ -35,11 +35,12 @@ bash /Users/deanocalver/Documents/Projects/Spider/e2e/test-macos-computer-browse
 
 - macOS
 - `zig`, `swiftc`, `python3`, `jq`, `open`, and `osascript`
-- one supported browser app installed:
-  - Google Chrome
-  - Chromium
-  - Brave Browser
-- Accessibility permission for the locally built `spiderweb-computer-driver`
+- Playwright installed; the smoke will provision Chromium into its isolated temp home before launch
+- Accessibility permission for the staged local-node driver at `.../local-node/bin/spiderweb-computer-driver`
+
+The local-node supervisor now stages permission-sensitive drivers into a stable path under the configured Spiderweb state directory. For this smoke, that path lives under the chosen `OUTPUT_DIR`, for example:
+
+`/Users/deanocalver/Documents/Projects/Spider/e2e/out/manual-computer-browser/ltm/local-node/bin/spiderweb-computer-driver`
 
 Screen capture is optional by default in this smoke because it is especially permission-sensitive on local machines. Set `COMPUTER_INCLUDE_SCREENSHOT=1`, `BROWSER_INCLUDE_SCREENSHOT=1`, and optionally `REQUIRE_SCREEN_CAPTURE=1` when you want the lane to enforce screenshot artifacts too.
 
