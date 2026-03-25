@@ -65,7 +65,6 @@ Important artifacts:
 - `artifacts/summary.json`
 
 For the computer venom, the primary end-to-end success oracle is the post-act observation payload, especially the observed `ui_tree` text field value. The fixture state file is kept as a diagnostic artifact, but it is not the authoritative assertion source for the lane.
-
 ## Cross-Platform Node Workspace Smoke
 
 `test-cross-platform-node-workspace.sh` exercises a mixed-platform workspace:
