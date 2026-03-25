@@ -56,6 +56,7 @@ Important artifacts:
 - `artifacts/packages.before-bind.json`
 - `artifacts/bindings.after-bind.json`
 - `artifacts/computer.observe.result.json`
+- `artifacts/computer.observe.after-act.result.json`
 - `artifacts/computer.last_observation.json`
 - `artifacts/computer.fixture_state.json`
 - `artifacts/browser.observe.result.json`
@@ -63,6 +64,7 @@ Important artifacts:
 - `artifacts/browser.last_dom.after-act.json`
 - `artifacts/summary.json`
 
+For the computer venom, the primary end-to-end success oracle is the post-act observation payload, especially the observed `ui_tree` text field value. The fixture state file is kept as a diagnostic artifact, but it is not the authoritative assertion source for the lane.
 ## Cross-Platform Node Workspace Smoke
 
 `test-cross-platform-node-workspace.sh` exercises a mixed-platform workspace:

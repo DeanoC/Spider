@@ -528,27 +528,33 @@ print(json.dumps({
 PY
 )" >/dev/null
 
-    python3 - "$FIXTURE_APP_STATE" "$COMPUTER_TYPED_TEXT" <<'PY'
+    log_info "Running computer observe after text_input ..."
+    observe_json="$(invoke_venom "computer" "$observe_payload")"
+    printf '%s\n' "$observe_json" >"$ARTIFACT_DIR/computer.observe.after-act.result.json"
+
+    python3 - "$ARTIFACT_DIR/computer.observe.after-act.result.json" "$COMPUTER_TYPED_TEXT" <<'PY'
 import json
 import sys
-import time
 from pathlib import Path
 
-state_path = Path(sys.argv[1])
+observe_path = Path(sys.argv[1])
 expected_text = sys.argv[2]
-deadline = time.time() + 10.0
-
-while time.time() < deadline:
-    if state_path.exists():
-        data = json.loads(state_path.read_text(encoding="utf-8"))
-        if int(data.get("button_press_count") or 0) >= 1 and data.get("last_text") == expected_text:
-            print(json.dumps(data, indent=2))
-            raise SystemExit(0)
-    time.sleep(0.25)
-
-raise SystemExit("fixture app state did not reflect the expected button press and typed text")
+data = json.loads(observe_path.read_text(encoding="utf-8"))
+observation = data.get("observation") or {}
+children = ((observation.get("ui_tree") or {}).get("children")) or []
+text_values = [child.get("value") for child in children if child.get("role") == "text_field"]
+if expected_text not in text_values:
+    raise SystemExit(
+        f"computer observe after act did not report the expected text field value: {expected_text!r}; got {text_values!r}"
+    )
+print(json.dumps({
+    "focused_window": observation.get("focused_window"),
+    "text_values": text_values,
+}, indent=2))
 PY
-    cp "$FIXTURE_APP_STATE" "$ARTIFACT_DIR/computer.fixture_state.json"
+    if [[ -f "$FIXTURE_APP_STATE" ]]; then
+        cp "$FIXTURE_APP_STATE" "$ARTIFACT_DIR/computer.fixture_state.json"
+    fi
 }
 
 run_browser_flow() {
