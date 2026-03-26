@@ -1,0 +1,240 @@
+#!/usr/bin/env python3
+
+from __future__ import annotations
+
+import json
+import os
+import time
+from pathlib import Path
+from typing import Any
+
+ROOT = Path(".")
+CATALOG_PATH = ROOT / ".spiderweb" / "catalog" / "targets.json"
+SUMMARY_PATH = ROOT / "cross_platform_demo_summary.json"
+
+LINUX_BROWSER_URL = "__LINUX_BROWSER_URL__"
+MACOS_BROWSER_URL = "__MACOS_BROWSER_URL__"
+LINUX_WINDOW_TITLE = "__LINUX_WINDOW_TITLE__"
+MACOS_APP_NAME = "__MACOS_APP_NAME__"
+MACOS_WINDOW_TITLE = "__MACOS_WINDOW_TITLE__"
+BUTTON_TITLE = "__BUTTON_TITLE__"
+LINUX_COMPUTER_TEXT = "__LINUX_COMPUTER_TEXT__"
+MACOS_COMPUTER_TEXT = "__MACOS_COMPUTER_TEXT__"
+LINUX_BROWSER_TEXT = "__LINUX_BROWSER_TEXT__"
+MACOS_BROWSER_TEXT = "__MACOS_BROWSER_TEXT__"
+BROWSER_INPUT_SELECTOR = "#fixture-input"
+BROWSER_BUTTON_SELECTOR = "#fixture-button"
+
+
+def load_json(path: Path) -> Any:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def read_catalog() -> dict[str, dict[str, Any]]:
+    catalog = load_json(CATALOG_PATH)
+    if not isinstance(catalog, list):
+        raise SystemExit("targets catalog is not an array")
+    by_os: dict[str, dict[str, Any]] = {}
+    for item in catalog:
+        if not isinstance(item, dict):
+            continue
+        os_name = ((item.get("platform") or {}).get("os"))
+        if isinstance(os_name, str):
+            by_os[os_name] = item
+    if "linux" not in by_os or "macos" not in by_os:
+        raise SystemExit(f"expected linux and macos targets, got {sorted(by_os)}")
+    return by_os
+
+
+def target_root(target_id: str, kind: str) -> Path:
+    return ROOT / ".spiderweb" / "targets" / target_id / kind
+
+
+def invoke(target: Path, payload: dict[str, Any], timeout: float = 30.0) -> dict[str, Any]:
+    invoke_path = target / "control" / "invoke.json"
+    result_path = target / "result.json"
+    before = result_path.stat().st_mtime_ns if result_path.exists() else 0
+    invoke_path.write_text(json.dumps(payload), encoding="utf-8")
+    deadline = time.time() + timeout
+    last_text = None
+    while time.time() < deadline:
+        try:
+            stat = result_path.stat()
+            if stat.st_mtime_ns > before:
+                last_text = result_path.read_text(encoding="utf-8").strip()
+                if last_text:
+                    return json.loads(last_text)
+        except FileNotFoundError:
+            pass
+        time.sleep(0.2)
+    raise SystemExit(f"timed out waiting for result for {target}: payload={payload!r} last_text={last_text!r}")
+
+
+def observe_computer(target: Path) -> dict[str, Any]:
+    return invoke(target, {"op": "observe", "arguments": {"include_screenshot": False}})
+
+
+def observe_browser(target: Path) -> dict[str, Any]:
+    return invoke(target, {"op": "observe", "arguments": {"include_dom": True, "include_screenshot": False}})
+
+
+def act(target: Path, arguments: dict[str, Any]) -> dict[str, Any]:
+    return invoke(target, {"op": "act", "arguments": arguments})
+
+
+def maybe_app_name(observation_result: dict[str, Any]) -> str:
+    observation = observation_result.get("observation") or {}
+    focused_window = observation.get("focused_window") or {}
+    if isinstance(focused_window.get("app_name"), str) and focused_window["app_name"]:
+        return focused_window["app_name"]
+    windows = observation.get("windows") or []
+    if isinstance(windows, list):
+        for window in windows:
+            if isinstance(window, dict):
+                app_name = window.get("app_name")
+                if isinstance(app_name, str) and app_name:
+                    return app_name
+    raise SystemExit("could not determine app name from observation")
+
+
+def walk_text_field_values(node: Any, out: list[str]) -> None:
+    if isinstance(node, dict):
+        if node.get("role") == "text_field":
+            value = node.get("value")
+            if isinstance(value, str):
+                out.append(value)
+        for child in node.get("children") or []:
+            walk_text_field_values(child, out)
+    elif isinstance(node, list):
+        for item in node:
+            walk_text_field_values(item, out)
+
+
+def computer_has_text(target: Path, text: str) -> bool:
+    observation = load_json(target / "artifacts" / "last_observation.json")
+    values: list[str] = []
+    walk_text_field_values(observation.get("ui_tree"), values)
+    return text in values
+
+
+def browser_html(target: Path) -> str:
+    dom = load_json(target / "artifacts" / "last_dom.json")
+    html = dom.get("html") or ""
+    return html if isinstance(html, str) else ""
+
+
+def ensure(condition: bool, message: str) -> None:
+    if not condition:
+        raise SystemExit(message)
+
+
+def write_summary(summary: dict[str, Any]) -> dict[str, Any]:
+    encoded = json.dumps(summary, indent=2) + "\n"
+    result = {
+        "path": "./cross_platform_demo_summary.json",
+        "persisted": False,
+    }
+    try:
+        with SUMMARY_PATH.open("w", encoding="utf-8") as handle:
+            handle.write(encoded)
+            handle.flush()
+            os.fsync(handle.fileno())
+        written = SUMMARY_PATH.read_text(encoding="utf-8")
+        if written != encoded:
+            result["error"] = "summary file content did not persist to the mounted workspace root"
+            return result
+        result["persisted"] = True
+        return result
+    except Exception as exc:
+        result["error"] = str(exc)
+        return result
+
+
+def main() -> int:
+    catalog = read_catalog()
+    linux_meta = catalog["linux"]
+    mac_meta = catalog["macos"]
+
+    linux_computer = target_root(str(linux_meta["target_id"]), "computer")
+    linux_browser = target_root(str(linux_meta["target_id"]), "browser")
+    mac_computer = target_root(str(mac_meta["target_id"]), "computer")
+    mac_browser = target_root(str(mac_meta["target_id"]), "browser")
+
+    log: list[str] = []
+
+    linux_obs_initial = observe_computer(linux_computer)
+    log.append("Observed Linux computer target.")
+    mac_obs_initial = observe_computer(mac_computer)
+    log.append("Observed macOS computer target.")
+
+    linux_app_name = maybe_app_name(linux_obs_initial)
+    mac_app_name = MACOS_APP_NAME or maybe_app_name(mac_obs_initial)
+
+    act(linux_computer, {"action": "activate", "app_name": linux_app_name})
+    log.append("Activated Linux computer fixture.")
+    act(linux_computer, {"action": "text_input", "text": LINUX_COMPUTER_TEXT})
+    log.append("Typed Linux computer text.")
+    observe_computer(linux_computer)
+    log.append("Observed Linux computer final state.")
+
+    act(mac_computer, {"action": "activate", "app_name": mac_app_name})
+    log.append("Activated macOS computer fixture.")
+    act(mac_computer, {"action": "focus_window", "app_name": mac_app_name, "window_title": MACOS_WINDOW_TITLE})
+    log.append("Focused macOS computer fixture window.")
+    mac_text_result = act(mac_computer, {"action": "text_input", "text": MACOS_COMPUTER_TEXT})
+    if not ((mac_text_result.get("action_result") or {}).get("ok", True)):
+        act(mac_computer, {"action": "activate", "app_name": mac_app_name})
+        act(mac_computer, {"action": "focus_window", "app_name": mac_app_name, "window_title": MACOS_WINDOW_TITLE})
+        mac_text_result = act(mac_computer, {"action": "text_input", "text": MACOS_COMPUTER_TEXT})
+    ensure(((mac_text_result.get("action_result") or {}).get("ok", True)), "macOS computer text_input failed")
+    log.append("Typed macOS computer text.")
+    observe_computer(mac_computer)
+    log.append("Observed macOS computer final state.")
+
+    act(linux_browser, {"action": "navigate", "url": LINUX_BROWSER_URL})
+    log.append("Navigated Linux browser.")
+    act(linux_browser, {"action": "text_input", "selector": BROWSER_INPUT_SELECTOR, "text": LINUX_BROWSER_TEXT})
+    log.append("Typed Linux browser text.")
+    act(linux_browser, {"action": "click", "selector": BROWSER_BUTTON_SELECTOR})
+    log.append("Clicked Linux browser fixture button.")
+    observe_browser(linux_browser)
+    log.append("Observed Linux browser final state.")
+
+    act(mac_browser, {"action": "navigate", "url": MACOS_BROWSER_URL})
+    log.append("Navigated macOS browser.")
+    act(mac_browser, {"action": "text_input", "selector": BROWSER_INPUT_SELECTOR, "text": MACOS_BROWSER_TEXT})
+    log.append("Typed macOS browser text.")
+    act(mac_browser, {"action": "click", "selector": BROWSER_BUTTON_SELECTOR})
+    log.append("Clicked macOS browser fixture button.")
+    observe_browser(mac_browser)
+    log.append("Observed macOS browser final state.")
+
+    ensure(computer_has_text(linux_computer, LINUX_COMPUTER_TEXT), "linux computer observation missing expected text")
+    ensure(computer_has_text(mac_computer, MACOS_COMPUTER_TEXT), "macOS computer observation missing expected text")
+    ensure(f"clicked:{LINUX_BROWSER_TEXT}" in browser_html(linux_browser), "linux browser DOM missing clicked text")
+    ensure(f"clicked:{MACOS_BROWSER_TEXT}" in browser_html(mac_browser), "macOS browser DOM missing clicked text")
+
+    summary = {
+        "status": "ok",
+        "targets_catalog_path": "./.spiderweb/catalog/targets.json",
+        "selected_targets": {
+            "linux": {
+                "target_id": linux_meta["target_id"],
+                "computer_path": f"./.spiderweb/targets/{linux_meta['target_id']}/computer",
+                "browser_path": f"./.spiderweb/targets/{linux_meta['target_id']}/browser",
+            },
+            "macos": {
+                "target_id": mac_meta["target_id"],
+                "computer_path": f"./.spiderweb/targets/{mac_meta['target_id']}/computer",
+                "browser_path": f"./.spiderweb/targets/{mac_meta['target_id']}/browser",
+            },
+        },
+        "execution_log": log,
+    }
+    summary["workspace_root_summary"] = write_summary(summary)
+    print(json.dumps(summary, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
