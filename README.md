@@ -7,6 +7,7 @@ The Spider ecosystem is a based around the Spiderweb agent 'hosted' OS,
 - SpiderApp - front end gui, to interact and observe the Spiderweb
 - SpiderNode - small nodes that provide new filesystems and venoms to the Spiderweb
 - SpiderVenoms - first-party capability venoms and managed local bundle releases
+- SpiderVenomRegistry - signed static registry metadata for published venom bundles
 - SpiderMonkey - custom research AI agent that is designed specifically for Spiderweb
 
 

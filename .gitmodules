@@ -13,3 +13,6 @@
 [submodule "SpiderVenoms"]
 	path = SpiderVenoms
 	url = https://github.com/DeanoC/SpiderVenoms.git
+[submodule "SpiderVenomRegistry"]
+	path = SpiderVenomRegistry
+	url = https://github.com/DeanoC/SpiderVenomRegistry.git
