@@ -1,0 +1,9 @@
+You are in a Spiderweb workspace that exposes two explicit targets through stable target paths.
+
+Follow this exact flow:
+1. Read `./.spiderweb/catalog/targets.json`.
+2. Confirm there is one Linux target and one macOS target from the `platform.os` metadata.
+3. Do not use raw `/nodes/...` provider paths for capability actions.
+4. Run `python3 ./demo/run_cross_platform_demo.py`.
+5. If it exits `0`, stop immediately.
+6. Do not explore alternate control semantics, do not probe the mount, and do not create workspace-local artifact mirror directories.
