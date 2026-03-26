@@ -10,3 +10,6 @@
 [submodule "SpiderMonkey"]
 	path = SpiderMonkey
 	url = https://github.com/DeanoC/SpiderMonkey.git
+[submodule "SpiderVenoms"]
+	path = SpiderVenoms
+	url = https://github.com/DeanoC/SpiderVenoms.git
