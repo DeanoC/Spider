@@ -28,3 +28,18 @@ git submodule update --init --recursive
 ```bash
 git submodule update --remote --merge
 ```
+
+## Packaging
+
+Product-local packaging stays inside each product repo:
+
+- `Spiderweb/platform/macos/scripts/package-spiderweb-macos-release.sh`
+- `SpiderApp/scripts/package-macos-app.sh`
+
+The parent repo now owns suite-level macOS packaging:
+
+```bash
+./scripts/package-spider-suite-macos.sh
+```
+
+That script orchestrates the existing Spiderweb and SpiderApp packagers, re-signs the staged SpiderApp bundle for distribution, builds a top-level `SpiderSuite-...pkg`, stages everything together under `dist/`, writes a suite manifest, renders `RELEASE_NOTES.md`, and zips the combined bundle.
