@@ -184,6 +184,8 @@ cp "$SPIDERWEB_PKG_PATH" "$SUITE_DIR/Spiderweb/"
 ditto "$SPIDERAPP_APP_PATH" "$SUITE_DIR/SpiderApp/SpiderApp.app"
 
 echo "==> Re-signing staged SpiderApp bundle"
+codesign --force --sign "$SPIDERWEB_MACOS_DEVELOPER_ID_APPLICATION" --timestamp --options runtime \
+  "$SUITE_DIR/SpiderApp/SpiderApp.app/Contents/Resources/spider"
 codesign --force --deep --sign "$SPIDERWEB_MACOS_DEVELOPER_ID_APPLICATION" --timestamp --options runtime \
   "$SUITE_DIR/SpiderApp/SpiderApp.app"
 codesign --verify --deep --strict "$SUITE_DIR/SpiderApp/SpiderApp.app"
