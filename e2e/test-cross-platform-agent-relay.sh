@@ -3,13 +3,19 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$ROOT_DIR/e2e/output-cleanup.sh"
 LINUX_HELPER="$ROOT_DIR/e2e/run_linux_spiderweb_host.sh"
 REMOTE_TEMPLATE_DIR="$ROOT_DIR/e2e/fixtures/agent-relay"
 LINUX_WORKER_PROMPT="$ROOT_DIR/e2e/prompts/agent-relay-linux-worker.txt"
 MACOS_REVIEWER_PROMPT="$ROOT_DIR/e2e/prompts/agent-relay-macos-reviewer.txt"
 VALIDATOR="$ROOT_DIR/e2e/validate_agent_relay.py"
 
-OUTPUT_DIR="${OUTPUT_DIR:-$ROOT_DIR/e2e/out/cross-platform-agent-relay-$(date +%Y%m%d-%H%M%S)-$$}"
+OUTPUT_DIR_WAS_EXPLICIT=0
+if [[ -n "${OUTPUT_DIR+x}" ]]; then
+    OUTPUT_DIR_WAS_EXPLICIT=1
+else
+    OUTPUT_DIR="$ROOT_DIR/e2e/out/cross-platform-agent-relay-$(date +%Y%m%d-%H%M%S)-$$"
+fi
 case "$OUTPUT_DIR" in
     "$ROOT_DIR"/*) RUN_DIR_REL="${OUTPUT_DIR#"$ROOT_DIR/"}" ;;
     *)
@@ -38,6 +44,7 @@ REMOTE_NODE_PORT="${REMOTE_NODE_PORT:-28952}"
 REMOTE_NODE_NAME="${REMOTE_NODE_NAME:-cross-macos-review-node}"
 REMOTE_EXPORT_NAME="${REMOTE_EXPORT_NAME:-remote-smoke}"
 REMOTE_BIND_PATH="/remote"
+KEEP_OUTPUT="${KEEP_OUTPUT:-}"
 
 LINUX_WORKER_JSONL="$LOG_DIR/linux-worker-codex.jsonl"
 LINUX_WORKER_STDERR="$LOG_DIR/linux-worker-codex.stderr.log"
@@ -192,6 +199,7 @@ cleanup() {
     if [[ -f "$LINUX_HELPER" ]] && command -v orbctl >/dev/null 2>&1; then
         orb_run cleanup >/dev/null 2>&1 || true
     fi
+    e2e_cleanup_output_dir "$exit_code" "$OUTPUT_DIR" "$OUTPUT_DIR_WAS_EXPLICIT" "$KEEP_OUTPUT"
     exit "$exit_code"
 }
 trap cleanup EXIT

@@ -11,6 +11,7 @@ $WindowsReviewerPrompt = Join-Path $RootDir "e2e/prompts/agent-relay-windows-rev
 $Validator = Join-Path $RootDir "e2e/validate_agent_relay.py"
 $RelayRunner = Join-Path $RootDir "e2e/agent_relay_runner.py"
 
+$OutputDirWasExplicit = Test-Path Env:OUTPUT_DIR
 $OutputDir = if ($env:OUTPUT_DIR) { $env:OUTPUT_DIR } else { New-RunDirectory "cross-platform-agent-relay-windows" }
 $OutputDir = Ensure-RunDirectoryUnderRepo $OutputDir
 $RunDirRel = Get-RunDirectoryRelative $OutputDir
@@ -45,6 +46,7 @@ $LocalRemoteNodeLog = Join-Path $LogDir "windows-remote-node.log"
 $LocalRemoteNodeErrLog = Join-Path $LogDir "windows-remote-node.stderr.log"
 $LocalRemoteNode = $null
 $script:HelperEnv = $null
+$script:RunSucceeded = $false
 
 function Cleanup {
     if ($null -ne $script:LocalRemoteNode -and -not $script:LocalRemoteNode.HasExited) {
@@ -289,6 +291,9 @@ try {
     Write-Host "  $RelayValidationJson"
     Write-Host "  $LinuxWorkerLast"
     Write-Host "  $WindowsReviewerLast"
+    $script:RunSucceeded = $true
 } finally {
     Cleanup
+    $exitCode = if ($script:RunSucceeded) { 0 } else { 1 }
+    Remove-RunDirectoryIfTransient -ExitCode $exitCode -Path $OutputDir -WasExplicit $OutputDirWasExplicit
 }
