@@ -3,13 +3,19 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$ROOT_DIR/e2e/output-cleanup.sh"
 LINUX_HELPER="$ROOT_DIR/e2e/run_linux_cross_platform_computer_browser_host.sh"
 FIXTURE_DIR="$ROOT_DIR/e2e/fixtures/macos-computer-browser"
 FIXTURE_SWIFT="$FIXTURE_DIR/ComputerFixtureApp.swift"
 BROWSER_FIXTURE_DIR="$FIXTURE_DIR/browser_fixture"
 WRITE_CAPABILITY_MANIFESTS="$ROOT_DIR/e2e/write_capability_manifests.py"
 
-OUTPUT_DIR="${OUTPUT_DIR:-$ROOT_DIR/e2e/out/cross-platform-computer-browser-demo-$(date +%Y%m%d-%H%M%S)-$$}"
+OUTPUT_DIR_WAS_EXPLICIT=0
+if [[ -n "${OUTPUT_DIR+x}" ]]; then
+    OUTPUT_DIR_WAS_EXPLICIT=1
+else
+    OUTPUT_DIR="$ROOT_DIR/e2e/out/cross-platform-computer-browser-demo-$(date +%Y%m%d-%H%M%S)-$$"
+fi
 case "$OUTPUT_DIR" in
     "$ROOT_DIR"/*) RUN_DIR_REL="${OUTPUT_DIR#"$ROOT_DIR/"}" ;;
     *)
@@ -37,6 +43,7 @@ LOCAL_WORKSPACE_NODE_PORT="${LOCAL_WORKSPACE_NODE_PORT:-}"
 REMOTE_NODE_PORT="${REMOTE_NODE_PORT:-}"
 REMOTE_NODE_NAME="${REMOTE_NODE_NAME:-cross-macos-computer-browser-node}"
 REMOTE_EXPORT_NAME="${REMOTE_EXPORT_NAME:-macos-demo-export}"
+KEEP_OUTPUT="${KEEP_OUTPUT:-}"
 
 MACOS_BROWSER_FIXTURE_PORT="${MACOS_BROWSER_FIXTURE_PORT:-}"
 MACOS_BROWSER_URL=""
@@ -226,6 +233,7 @@ cleanup() {
     if [[ -f "$LINUX_HELPER" ]] && command -v orbctl >/dev/null 2>&1; then
         orb_run cleanup >/dev/null 2>&1 || true
     fi
+    e2e_cleanup_output_dir "$exit_code" "$OUTPUT_DIR" "$OUTPUT_DIR_WAS_EXPLICIT" "$KEEP_OUTPUT"
     exit "$exit_code"
 }
 trap cleanup EXIT

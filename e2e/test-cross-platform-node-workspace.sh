@@ -3,10 +3,16 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$ROOT_DIR/e2e/output-cleanup.sh"
 LINUX_HELPER="$ROOT_DIR/e2e/run_linux_spiderweb_host.sh"
 REMOTE_FIXTURE_DIR="$ROOT_DIR/e2e/fixtures/remote-smoke"
 
-OUTPUT_DIR="${OUTPUT_DIR:-$ROOT_DIR/e2e/out/cross-platform-node-workspace-$(date +%Y%m%d-%H%M%S)-$$}"
+OUTPUT_DIR_WAS_EXPLICIT=0
+if [[ -n "${OUTPUT_DIR+x}" ]]; then
+    OUTPUT_DIR_WAS_EXPLICIT=1
+else
+    OUTPUT_DIR="$ROOT_DIR/e2e/out/cross-platform-node-workspace-$(date +%Y%m%d-%H%M%S)-$$"
+fi
 case "$OUTPUT_DIR" in
     "$ROOT_DIR"/*) RUN_DIR_REL="${OUTPUT_DIR#"$ROOT_DIR/"}" ;;
     *)
@@ -31,6 +37,7 @@ LOCAL_WORKSPACE_NODE_PORT="${LOCAL_WORKSPACE_NODE_PORT:-28911}"
 REMOTE_NODE_PORT="${REMOTE_NODE_PORT:-28912}"
 REMOTE_NODE_NAME="${REMOTE_NODE_NAME:-cross-macos-remote-node}"
 REMOTE_EXPORT_NAME="${REMOTE_EXPORT_NAME:-remote-smoke}"
+KEEP_OUTPUT="${KEEP_OUTPUT:-}"
 
 LOCAL_REMOTE_NODE_LOG="$LOG_DIR/macos-remote-node.log"
 LOCAL_REMOTE_NODE_PID=""
@@ -118,6 +125,7 @@ cleanup() {
     if [[ -f "$LINUX_HELPER" ]] && command -v orbctl >/dev/null 2>&1; then
         orb_run cleanup >/dev/null 2>&1 || true
     fi
+    e2e_cleanup_output_dir "$exit_code" "$OUTPUT_DIR" "$OUTPUT_DIR_WAS_EXPLICIT" "$KEEP_OUTPUT"
     exit "$exit_code"
 }
 trap cleanup EXIT

@@ -3,13 +3,19 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$ROOT_DIR/e2e/output-cleanup.sh"
 SPIDERWEB_DIR="$ROOT_DIR/Spiderweb"
 
 FIXTURE_DIR="$ROOT_DIR/e2e/fixtures/macos-computer-browser"
 FIXTURE_SWIFT="$FIXTURE_DIR/ComputerFixtureApp.swift"
 BROWSER_FIXTURE_DIR="$FIXTURE_DIR/browser_fixture"
 
-OUTPUT_DIR="${OUTPUT_DIR:-$ROOT_DIR/e2e/out/macos-computer-browser-node-$(date +%Y%m%d-%H%M%S)-$$}"
+OUTPUT_DIR_WAS_EXPLICIT=0
+if [[ -n "${OUTPUT_DIR+x}" ]]; then
+    OUTPUT_DIR_WAS_EXPLICIT=1
+else
+    OUTPUT_DIR="$ROOT_DIR/e2e/out/macos-computer-browser-node-$(date +%Y%m%d-%H%M%S)-$$"
+fi
 LOG_DIR="$OUTPUT_DIR/logs"
 STATE_DIR="$OUTPUT_DIR/state"
 ARTIFACT_DIR="$OUTPUT_DIR/artifacts"
@@ -26,6 +32,7 @@ BROWSER_FIXTURE_PORT="${BROWSER_FIXTURE_PORT:-}"
 CONTROL_URL=""
 
 KEEP_TEMP="${KEEP_TEMP:-0}"
+KEEP_OUTPUT="${KEEP_OUTPUT:-$KEEP_TEMP}"
 SKIP_BUILD="${SKIP_BUILD:-0}"
 COMPUTER_INCLUDE_SCREENSHOT="${COMPUTER_INCLUDE_SCREENSHOT:-0}"
 BROWSER_INCLUDE_SCREENSHOT="${BROWSER_INCLUDE_SCREENSHOT:-0}"
@@ -663,9 +670,7 @@ cleanup() {
         kill "$SPIDERWEB_PID" >/dev/null 2>&1 || true
         wait "$SPIDERWEB_PID" >/dev/null 2>&1 || true
     fi
-    if [[ "$KEEP_TEMP" != "1" && -d "$OUTPUT_DIR" ]]; then
-        rm -rf "$OUTPUT_DIR"
-    fi
+    e2e_cleanup_output_dir "$exit_code" "$OUTPUT_DIR" "$OUTPUT_DIR_WAS_EXPLICIT" "$KEEP_OUTPUT"
     exit "$exit_code"
 }
 trap cleanup EXIT

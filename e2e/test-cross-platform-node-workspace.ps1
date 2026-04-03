@@ -7,6 +7,7 @@ $RootDir = $script:RepoRoot
 $RemoteFixtureDir = Join-Path $RootDir "e2e/fixtures/remote-smoke"
 $LinuxHelper = Join-Path $RootDir "e2e/run_linux_spiderweb_host.sh"
 
+$OutputDirWasExplicit = Test-Path Env:OUTPUT_DIR
 $OutputDir = if ($env:OUTPUT_DIR) { $env:OUTPUT_DIR } else { New-RunDirectory "cross-platform-node-workspace-windows" }
 $OutputDir = Ensure-RunDirectoryUnderRepo $OutputDir
 $RunDirRel = Get-RunDirectoryRelative $OutputDir
@@ -30,6 +31,7 @@ $LocalRemoteNodeLog = Join-Path $LogDir "windows-remote-node.log"
 $LocalRemoteNodeErrLog = Join-Path $LogDir "windows-remote-node.stderr.log"
 $LocalRemoteNode = $null
 $script:HelperEnv = $null
+$script:RunSucceeded = $false
 
 function Cleanup {
     if ($null -ne $script:LocalRemoteNode -and -not $script:LocalRemoteNode.HasExited) {
@@ -142,6 +144,9 @@ try {
     Write-Host "  $handoffFile"
     Write-Host "  $resultFile"
     Write-Host "  $remoteSmokeFile"
+    $script:RunSucceeded = $true
 } finally {
     Cleanup
+    $exitCode = if ($script:RunSucceeded) { 0 } else { 1 }
+    Remove-RunDirectoryIfTransient -ExitCode $exitCode -Path $OutputDir -WasExplicit $OutputDirWasExplicit
 }

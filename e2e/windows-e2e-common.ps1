@@ -35,6 +35,22 @@ function New-RunDirectory {
     return Join-Path $script:RepoRoot ("e2e/out/{0}-{1}-{2}" -f $Prefix, $stamp, $PID)
 }
 
+function Test-TruthyString {
+    param([AllowNull()][string]$Value)
+
+    if ($null -eq $Value) {
+        return $false
+    }
+
+    switch ($Value.Trim().ToLowerInvariant()) {
+        "1" { return $true }
+        "true" { return $true }
+        "yes" { return $true }
+        "on" { return $true }
+        default { return $false }
+    }
+}
+
 function Ensure-RunDirectoryUnderRepo {
     param([string]$Path)
 
@@ -52,6 +68,36 @@ function Get-RunDirectoryRelative {
     $repo = [System.IO.Path]::GetFullPath($script:RepoRoot).TrimEnd("\")
     $full = [System.IO.Path]::GetFullPath($Path)
     return $full.Substring($repo.Length + 1).Replace("\", "/")
+}
+
+function Remove-RunDirectoryIfTransient {
+    param(
+        [int]$ExitCode,
+        [string]$Path,
+        [bool]$WasExplicit = $false
+    )
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        return
+    }
+
+    if (Test-TruthyString $env:KEEP_OUTPUT -or Test-TruthyString $env:KEEP_TEMP) {
+        Write-Info "Preserving E2E artifacts at $Path because KEEP_OUTPUT is enabled"
+        return
+    }
+
+    if ($ExitCode -ne 0) {
+        Write-Info "Preserving failed E2E artifacts at $Path"
+        return
+    }
+
+    if ($WasExplicit) {
+        Write-Info "Preserving E2E artifacts at $Path because OUTPUT_DIR was set explicitly"
+        return
+    }
+
+    Remove-Item -LiteralPath $Path -Recurse -Force
+    Write-Info "Removed transient E2E artifacts at $Path"
 }
 
 function Wait-ForFile {

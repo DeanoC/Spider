@@ -9,11 +9,18 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$ROOT_DIR/e2e/output-cleanup.sh"
 SPIDERWEB_DIR="$ROOT_DIR/Spiderweb"
 
-OUTPUT_DIR="${OUTPUT_DIR:-$ROOT_DIR/e2e/out/mcp-bridge-$(date +%Y%m%d-%H%M%S)-$$}"
+OUTPUT_DIR_WAS_EXPLICIT=0
+if [[ -n "${OUTPUT_DIR+x}" ]]; then
+    OUTPUT_DIR_WAS_EXPLICIT=1
+else
+    OUTPUT_DIR="$ROOT_DIR/e2e/out/mcp-bridge-$(date +%Y%m%d-%H%M%S)-$$"
+fi
 LOG_DIR="$OUTPUT_DIR/logs"
 ARTIFACT_DIR="$OUTPUT_DIR/artifacts"
+KEEP_OUTPUT="${KEEP_OUTPUT:-}"
 
 MCP_BRIDGE="$SPIDERWEB_DIR/zig-out/bin/spiderweb-mcp-bridge"
 # On Windows the binary has an .exe extension
@@ -145,6 +152,7 @@ cleanup() {
     if [[ -n "${FIXTURE_DIR:-}" && -d "$FIXTURE_DIR" ]]; then
         rm -rf "$FIXTURE_DIR"
     fi
+    e2e_cleanup_output_dir "$exit_code" "$OUTPUT_DIR" "$OUTPUT_DIR_WAS_EXPLICIT" "$KEEP_OUTPUT"
     exit "$exit_code"
 }
 trap cleanup EXIT

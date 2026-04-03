@@ -31,6 +31,8 @@ OUTPUT_DIR=/Users/deanocalver/Documents/Projects/Spider/e2e/out/manual-computer-
 bash /Users/deanocalver/Documents/Projects/Spider/e2e/test-macos-computer-browser-node.sh
 ```
 
+Default timestamped run directories are now treated as transient and removed automatically after a successful run. Set `KEEP_OUTPUT=1` when you want to keep a generated run directory, or provide an explicit `OUTPUT_DIR` when you want to preserve artifacts in a known location.
+
 ### Prerequisites
 
 - macOS
@@ -49,6 +51,8 @@ Screen capture is optional by default in this smoke because it is especially per
 Each run writes a timestamped artifact directory under:
 
 `/Users/deanocalver/Documents/Projects/Spider/e2e/out/`
+
+Successful runs clean up those auto-generated directories by default. Failed runs are preserved for debugging, and you can keep successful artifacts too with `KEEP_OUTPUT=1` or an explicit `OUTPUT_DIR`.
 
 Important artifacts:
 
@@ -96,6 +100,8 @@ bash /Users/deanocalver/Documents/Projects/Spider/e2e/test-cross-platform-node-w
 Each run writes a timestamped artifact directory under:
 
 `/Users/deanocalver/Documents/Projects/Spider/e2e/out/`
+
+Successful runs clean up those auto-generated directories by default. Failed runs are preserved for debugging, and `KEEP_OUTPUT=1` keeps successful artifacts too.
 
 Important artifacts:
 
