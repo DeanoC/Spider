@@ -43,3 +43,50 @@ The parent repo now owns suite-level macOS packaging:
 ```
 
 That script orchestrates the existing Spiderweb and SpiderApp packagers, re-signs the staged SpiderApp bundle for distribution, builds a top-level `SpiderSuite-...pkg`, stages everything together under `dist/`, writes a suite manifest, renders `RELEASE_NOTES.md`, and zips the combined bundle.
+
+The parent repo now also owns the canonical Linux suite archive:
+
+```bash
+./scripts/package-spider-suite-linux.sh
+```
+
+That Linux archive bundles:
+
+- `spider` as the operator CLI/TUI
+- `spiderweb` and `spiderweb-config`
+- `spiderweb-fs-node`
+- shared runtime assets under `share/`
+
+## Linux
+
+The supported Linux path is Ubuntu/Debian with `systemd`, using `spider` as the primary operator surface.
+
+Install from a published archive with:
+
+```bash
+sudo ./install-linux.sh
+```
+
+Then run:
+
+```bash
+spider
+```
+
+The guided Linux home offers exactly three jobs:
+
+- `Host Spiderweb Here`
+- `Connect This Linux Machine`
+- `Status / Repair`
+
+Further docs:
+
+- [Host Spiderweb on Linux](docs/linux-host-spiderweb.md)
+- [Connect a Linux machine to another Spiderweb](docs/linux-connect-node.md)
+
+For Linux node pairing on a macOS-hosted Spiderweb, use the same `spider` CLI on the Mac host for:
+
+- `spider node invite-create`
+- `spider node pending`
+- `spider node approve <request-id>`
+- `spider node deny <request-id>`
